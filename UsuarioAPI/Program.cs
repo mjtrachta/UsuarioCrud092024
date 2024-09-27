@@ -81,15 +81,22 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        // Aplica las migraciones solo si no existen
-        if (dbContext.Database.GetPendingMigrations().Any())
+        // Aplica las migraciones pendientes si existen
+        var pendingMigrations = dbContext.Database.GetPendingMigrations();
+        if (pendingMigrations.Any())
         {
+            Console.WriteLine("Applying migrations...");
             dbContext.Database.Migrate(); // Aplica las migraciones pendientes
+            Console.WriteLine("Migrations applied successfully.");
+        }
+        else
+        {
+            Console.WriteLine("No pending migrations found.");
         }
     }
     catch (Exception ex)
     {
-        // Loggear el error para identificar si hay problemas con las migraciones
+        // Loguear el error en la consola o usar un sistema de logs
         Console.WriteLine($"Error applying migrations: {ex.Message}");
     }
 }
