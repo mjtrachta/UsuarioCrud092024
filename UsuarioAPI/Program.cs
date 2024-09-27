@@ -11,9 +11,6 @@ using UserApi.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-
-
 // Configuración de JWT
 var key = Encoding.ASCII.GetBytes(builder.Configuration["JwtConfig:Secret"]);
 builder.Services.AddAuthentication(options =>
@@ -34,18 +31,11 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-
-
 builder.Services.AddAuthorization();
-
-
-
-
 
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
-
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -56,7 +46,6 @@ builder.Services.AddSwaggerGen(c =>
         In = ParameterLocation.Header,
         Description = "Ingrese el token JWT en el siguiente formato: Bearer {token}"
     });
-
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -74,10 +63,6 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-
-
-
-
 builder.Services.AddControllers();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -88,6 +73,26 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 var app = builder.Build();
+
+// Aplicar migraciones automáticamente con manejo de excepciones
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+    try
+    {
+        // Aplica las migraciones solo si no existen
+        if (dbContext.Database.GetPendingMigrations().Any())
+        {
+            dbContext.Database.Migrate(); // Aplica las migraciones pendientes
+        }
+    }
+    catch (Exception ex)
+    {
+        // Loggear el error para identificar si hay problemas con las migraciones
+        Console.WriteLine($"Error applying migrations: {ex.Message}");
+    }
+}
 
 if (app.Environment.IsDevelopment())
 {
@@ -101,7 +106,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
